@@ -26,6 +26,7 @@
 import slugify from 'slugify'
 import db from '@/firebase/init'
 import firebase from 'firebase'
+import functions from 'firebase/functions'
 
 export default {
   name: 'Signup',
@@ -47,15 +48,19 @@ export default {
           remove: /[$*_+~.()'"!\-:@]/g,
           lower: true
         })
-        let ref = db.collection('users').doc(this.slug)
-        ref.get().then(doc => {
-          if(doc.exists){
+        // let ref = db.collection('users').doc(this.slug)
+        // we just stored it to check alias
+        let checkAlias = firebase.functions().httpsCallable('checkAlias')
+        // invoke this/now, call this
+        checkAlias({slug: this.slug}).then(result => {
+          // result is whatever the function returns
+          console.log(result)
+          if(!result.data.unique){
             this.feedback = "This alias already exists."
           } else {
-            // this.feedback = "This is alias is free to use"
             firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
             .then( cred => {
-              ref.set({
+              db.collection('users').doc(this.slug).set({
                 alias: this.alias,
                 geolocation: null,
                 user_id: cred.user.uid
@@ -67,8 +72,6 @@ export default {
               console.log(error)
               this.feedback = error.message
             })
-
-
           }
         })
         // check firebase
