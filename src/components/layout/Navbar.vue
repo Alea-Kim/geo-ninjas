@@ -42,6 +42,8 @@ export default {
       if(user){
         // logged in
         this.user = user
+      } else {
+        this.user = null
       }
     })
   }
